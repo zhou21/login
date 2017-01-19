@@ -1,4 +1,4 @@
-src = main.c http.c cJSON.c
+src = main.c http.c cJSON.c link.c
 CC=gcc
 
 all: wifigod

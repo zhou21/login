@@ -2,7 +2,6 @@
 #include<stdlib.h>
 #include<string.h>
 #include <unistd.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
@@ -21,22 +20,12 @@
 #include <net/ethernet.h>
 #include <sys/types.h>
 #include <netinet/if_ether.h>
-
 #include"http.h"
+#include"link.h"
 #include"cJSON.h"
 
 #define ARPHRD_ETHER  1 
 #define SIZE  2048
-char up_ether[64] = "";
-char down_ether[64] = "";
-
-typedef struct configure{
-	unsigned char feild[128];
-	unsigned char value[128];
-	
-	struct configure *next;
-}Config;
-
 
 static const unsigned char map[256] = {  
 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 253, 255,  
@@ -288,45 +277,68 @@ int update_ip_and_eth(char *ether, char * ip, char * mask, char *gw, char * mac)
 }
 
 
-int reslove_configure(const char * configure, unsigned char *feild, unsigned char *value)
+Config *reslove_configure(unsigned char *line, Config *head)
 {
-	if configure == NULL{
-		return -1;
-	}
+	Config node;
+	bzero(&node, sizeof(node));
 
-	sscanf(configure, "%[^:]:%[^\n]", feild, value);
-	if (feild != NULL && value != NULL){
-		return 0;
+	sscanf(line, "%[^:]:%[^\n]", node.feild, node.value);
+	if (node.feild != NULL && node.feild != NULL){
+		head = insert_node(head, node);
+		//printf("<node>:%s %s\n", node.feild, node.value);
+		return head;
 	}
-
-	return -1;
+	
+	return NULL;
 }
 
-int load_configure(const char *configure_file, unsigned char config[][], int max_config)
+Config *load_configure(unsigned char *configure_file, Config *head)
 {
-     FILE * filep = open_file(configure_file)
+     FILE * filep = open_file(configure_file);
 	 unsigned char *stop = NULL;
 	 unsigned char line[1024] = "";
 	 int i = 0;
 	 do{
-		 if (i >= max_config){
-			 return 0;
-		 }
-		 char *stop = fgets(line, SIZE, filep);
+		 stop = fgets(line, SIZE, filep);
 		 if (stop != NULL){
-			 //TODO; 链表
-			 int ok = reslove_configure(line, config[i]);
+			 head = reslove_configure(line, head);
 		 }
 	 }while(stop != NULL);
+	 return head;
+}
+
+int load_config_cache(Config *head, unsigned char *start_ip, unsigned char *mask, unsigned char *gw, char *user_path, unsigned char *ether)
+{
+	struct ifreq temp;  
+    struct sockaddr* addr;  
+
+	Config *tmp = head;
+	while(tmp != NULL){
+		unsigned char *feild = tmp->feild;
+		if(strcmp(feild, "start_ip") == 0){
+			unsigned int ip_int = 0;
+			inet_pton(AF_INET, tmp->value, &ip_int);
+			memcpy(start_ip, (unsigned char *)&ip_int, 4);
+		}else if(strcmp(feild, "gw") == 0){
+			strcpy(gw, tmp->value);
+		}else if(strcmp(feild, "mask") == 0){
+			strcpy(mask, tmp->value);
+		}else if(strcmp(feild, "user_file") == 0){
+			strcpy(user_path, tmp->value);
+		}else if(strcmp(feild, "ether") == 0){
+			strcpy(ether, tmp->value);
+		}
+		tmp = tmp->next;
+	}
 }
 
 int main(int agrc, char *agrv[])
 {
-	if(agrc < 3){
-		printf("sorry you have not input enough para\n");
+	if(agrc < 2){
+		printf("sorry you have not input config file\n");
 		return -1;
 	}
-	
+/*
 	printf("login begin\n");
 	unsigned char *ether = agrv[1]; 
 	unsigned char *user_path = agrv[2];
@@ -334,20 +346,35 @@ int main(int agrc, char *agrv[])
 	if (agrv[3] == NULL) {
 		defualt_password = "123456";
 	}
+*/
+	unsigned char mac[6] = {2,12,41,28,178,50};
+	unsigned char ip[4] = {172,16,0,12};
+	unsigned char mask[32] = "255.255.0.0";
+	unsigned char gw[32] = "172.16.0.1";
+	unsigned char user_path[32] = "";
+	unsigned char ether[32] = "";
 
 	//TODO load config from file 
+	Config *head = NULL;
+	head = load_configure(agrv[1], head);
+	if (head == NULL){
+		return -1;
+	}
+	//print_link(head);
+	load_config_cache(head, ip, mask, gw, user_path, ether);
 
-	unsigned char mac[] = {2,12,41,28,178,50};
-	unsigned char ip[] = {172,16,0,12};
-	unsigned char ip_str[16] = "";
-	unsigned char mask[] = "255.255.0.0";
-	unsigned char gw[] = "172.16.0.1";
 	FILE *fp = open_file(user_path);
 	unsigned char username[128] = "";
+	unsigned char ip_str[16] = "";
 	unsigned char *stop = NULL;
 
-	sprintf(up_ether, "ifconfig %s up",ether);
-	sprintf(down_ether, "ifconfig %s down",ether);
+	printf("<user_path>: %s\n", user_path);
+	sprintf(ip_str, "%d.%d.%d.%d",ip[0],ip[1],ip[2],ip[3]);
+	printf("<ip_str>: %s\n", ip_str);
+	printf("<mask>: %s\n", mask);
+	printf("<gw>: %s\n", gw);
+	printf("<ether>: %s\n", ether);
+
 	do{
 		stop = read_line(fp, username);
 		if (stop != NULL){

@@ -30,6 +30,14 @@
 char up_ether[64] = "";
 char down_ether[64] = "";
 
+typedef struct configure{
+	unsigned char feild[128];
+	unsigned char value[128];
+	
+	struct configure *next;
+}Config;
+
+
 static const unsigned char map[256] = {  
 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 253, 255,  
 255, 253, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,  
@@ -279,6 +287,39 @@ int update_ip_and_eth(char *ether, char * ip, char * mask, char *gw, char * mac)
 
 }
 
+
+int reslove_configure(const char * configure, unsigned char *feild, unsigned char *value)
+{
+	if configure == NULL{
+		return -1;
+	}
+
+	sscanf(configure, "%[^:]:%[^\n]", feild, value);
+	if (feild != NULL && value != NULL){
+		return 0;
+	}
+
+	return -1;
+}
+
+int load_configure(const char *configure_file, unsigned char config[][], int max_config)
+{
+     FILE * filep = open_file(configure_file)
+	 unsigned char *stop = NULL;
+	 unsigned char line[1024] = "";
+	 int i = 0;
+	 do{
+		 if (i >= max_config){
+			 return 0;
+		 }
+		 char *stop = fgets(line, SIZE, filep);
+		 if (stop != NULL){
+			 //TODO; 链表
+			 int ok = reslove_configure(line, config[i]);
+		 }
+	 }while(stop != NULL);
+}
+
 int main(int agrc, char *agrv[])
 {
 	if(agrc < 3){
@@ -293,6 +334,8 @@ int main(int agrc, char *agrv[])
 	if (agrv[3] == NULL) {
 		defualt_password = "123456";
 	}
+
+	//TODO load config from file 
 
 	unsigned char mac[] = {2,12,41,28,178,50};
 	unsigned char ip[] = {172,16,0,12};

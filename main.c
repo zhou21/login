@@ -307,7 +307,7 @@ Config *load_configure(unsigned char *configure_file, Config *head)
 	 return head;
 }
 
-int load_config_cache(Config *head, unsigned char *start_ip, unsigned char *mask, unsigned char *gw, char *user_path, unsigned char *ether)
+int load_config_cache(Config *head, unsigned char *start_ip, unsigned char *mask, unsigned char *gw, char *user_path, unsigned char *ether, unsigned char *password)
 {
 	struct ifreq temp;  
     struct sockaddr* addr;  
@@ -327,6 +327,8 @@ int load_config_cache(Config *head, unsigned char *start_ip, unsigned char *mask
 			strcpy(user_path, tmp->value);
 		}else if(strcmp(feild, "ether") == 0){
 			strcpy(ether, tmp->value);
+		}else if(strcmp(feild, "default_password") == 0){
+			strcpy(password, tmp->value);
 		}
 		tmp = tmp->next;
 	}
@@ -353,7 +355,7 @@ int main(int agrc, char *agrv[])
 	unsigned char gw[32] = "172.16.0.1";
 	unsigned char user_path[32] = "";
 	unsigned char ether[32] = "";
-
+	unsigned char default_password[32] = "123456";
 	//TODO load config from file 
 	Config *head = NULL;
 	head = load_configure(agrv[1], head);
@@ -361,7 +363,7 @@ int main(int agrc, char *agrv[])
 		return -1;
 	}
 	//print_link(head);
-	load_config_cache(head, ip, mask, gw, user_path, ether);
+	load_config_cache(head, ip, mask, gw, user_path, ether, default_password);
 
 	FILE *fp = open_file(user_path);
 	unsigned char username[128] = "";
@@ -374,6 +376,9 @@ int main(int agrc, char *agrv[])
 	printf("<mask>: %s\n", mask);
 	printf("<gw>: %s\n", gw);
 	printf("<ether>: %s\n", ether);
+	printf("<default_password>: %s\n", default_password);
+
+	//释放链表资源 TODO
 
 	do{
 		stop = read_line(fp, username);
@@ -383,7 +388,7 @@ int main(int agrc, char *agrv[])
 			printf("<ip_str>: %s\n", ip_str);
 			update_ip_and_eth(ether, ip_str, mask, gw, mac);
 			usleep(200);
-			login(username, defualt_password);
+			login(username, default_password);
 		}
 		
 		ip[3]++;

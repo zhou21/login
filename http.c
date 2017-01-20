@@ -85,8 +85,8 @@ static int http_parse_url(const char *url,char *host,char *file,int *port)
         *port = MY_HTTP_DEFAULT_PORT;  
     }  
   
-    return 0;  
-}  
+    return 0;
+}
   
   
 static int http_tcpclient_recv(int socket,char *lpbuff){  
@@ -95,7 +95,7 @@ static int http_tcpclient_recv(int socket,char *lpbuff){
     recvnum = recv(socket, lpbuff,BUFFER_SIZE*4,0);  
   
     return recvnum;  
-}  
+}
   
 static int http_tcpclient_send(int socket,char *buff,int size){  
     int sent=0,tmpres=0;  
@@ -161,7 +161,7 @@ char * http_post(const char *url,const char *post_str){
         return NULL;  
     }  
   
-    if(http_parse_url(url,host_addr,file,&port)){  
+    if(http_parse_url(url,host_addr,file,&port)){
         printf("http_parse_url failed!\n");  
         return NULL;  
     }  

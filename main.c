@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <netinet/if_ether.h>
 #include"http.h"
+#include"log.h"
 #include"link.h"
 #include"cJSON.h"
 
@@ -96,18 +97,22 @@ int login(char *username, char * password)
 
 	//获取token值
 	char json_text[1024] = "";
-	sscanf(http_r, "%*[^{]%[^\n]",json_text); 
+	sscanf(http_r, "%*[^{]%[^\n]",json_text);
 	//"token":"ebbcea43f42c646feecdcc2fd9793895"
 	printf("<auth result>:%s\n", json_text);
 	
 	char *auth_ok = strstr(json_text, "\"r\":1");
 	if (auth_ok == NULL){
+		unsigned char error_msg[1024] = ""; 
+		sprintf(error_msg, "<username: %s><password: %s>--<%s>", username, password, http_r);
+		log_error(error_msg);
 		printf("username auth fail to skip \n");
 		return -1;
 	}
+
 	cJSON * root = cJSON_Parse(json_text);
-	cJSON* tmp1=cJSON_GetObjectItem(root,"d");  	
-	cJSON* tmp2=cJSON_GetObjectItem(tmp1,"token");  	
+	cJSON* tmp1=cJSON_GetObjectItem(root,"d");	
+	cJSON* tmp2=cJSON_GetObjectItem(tmp1,"token");
 	if( tmp2 != NULL){
 		if (tmp2->valuestring != NULL)
 			printf("<token>: %s\n", tmp2->valuestring);
@@ -157,7 +162,7 @@ int set_hand_ip(char *ether, const char *ipaddr, int what_addr)
         return -1;       
     }  
      
-    sock_set_ip = socket( AF_INET, SOCK_STREAM, 0 );  
+    sock_set_ip = socket(AF_INET, SOCK_STREAM, 0);  
     //printf("sock_set_ip=====%d\n",sock_set_ip);  
     if(sock_set_ip<0)    
     {       
@@ -172,23 +177,25 @@ int set_hand_ip(char *ether, const char *ipaddr, int what_addr)
     sin_set_ip.sin_addr.s_addr = inet_addr(ipaddr);       
     memcpy( &ifr_set_ip.ifr_addr, &sin_set_ip, sizeof(sin_set_ip));       
     printf("ipaddr===%s\n",ipaddr);  
-    if( ioctl( sock_set_ip, what_addr, &ifr_set_ip) < 0 )       
+    if( ioctl(sock_set_ip, what_addr, &ifr_set_ip) < 0)       
     {       
         perror( "Not setup interface");       
-        return -1;       
+        close(sock_set_ip);
+		return -1;       
     }       
   
     //设置激活标志        
     ifr_set_ip.ifr_flags |= IFF_UP |IFF_RUNNING;        
   
     //get the status of the device        
-    if( ioctl( sock_set_ip, SIOCSIFFLAGS, &ifr_set_ip ) < 0 )       
-    {       
+    if( ioctl(sock_set_ip, SIOCSIFFLAGS, &ifr_set_ip) < 0 )       
+    {  
+		 close(sock_set_ip);     
          perror("SIOCSIFFLAGS");       
          return -1;       
     }       
       
-    close( sock_set_ip );       
+    close(sock_set_ip);       
     return 0;  
 } 
 
@@ -383,6 +390,9 @@ int main(int agrc, char *agrv[])
 	if (head == NULL){
 		printf("free ok\n");
 	}
+	
+	//delete log
+	delete_log_file();
 
 	do{
 		stop = read_line(fp, username);

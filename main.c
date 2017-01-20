@@ -146,9 +146,9 @@ FILE * open_file(char *path)
 }
 
 /************************************************************* 
-* 函数功能： 手动设置IP地址 
-* 参数类型： 要设置的IP地址 
-* 返回类型： 成功返回0，失败返回-1 
+* function：set IP 
+* paras:    IP string
+* return    success: 0  fail: -1 
 **************************************************************/  
 int set_hand_ip(char *ether, const char *ipaddr, int what_addr)  
 {  

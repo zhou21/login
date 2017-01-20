@@ -12,7 +12,7 @@
 #include "http.h"  
   
 #define BUFFER_SIZE 1024  
-#define HTTP_POST "POST /%s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\nContent-Type:application/x-www-form-urlencoded\r\nContent-Length: %d\r\n\r\n%s"  
+#define HTTP_POST "POST /%s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\nContent-Type:application/x-www-form-urlencoded\r\nContent-Length: %ld\r\n\r\n%s"  
 #define HTTP_GET "GET /%s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\n\r\n"  
 #define SIZE_HTTP_RESPONSE 2048
 char http_response[SIZE_HTTP_RESPONSE] = "";

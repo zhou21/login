@@ -8,7 +8,7 @@ typedef struct configure{
 	struct configure *next;
 }Config;
 
-extern int delete_link(Config *head);
+extern Config * delete_link(Config *head);
 extern Config *insert_node(Config *head, Config node);
-extern int print_link(Config *head);
+extern void print_link(Config *head);
 #endif  

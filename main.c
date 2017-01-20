@@ -362,7 +362,7 @@ int main(int agrc, char *agrv[])
 	if (head == NULL){
 		return -1;
 	}
-	//print_link(head);
+	print_link(head);
 	load_config_cache(head, ip, mask, gw, user_path, ether, default_password);
 
 	FILE *fp = open_file(user_path);
@@ -379,6 +379,10 @@ int main(int agrc, char *agrv[])
 	printf("<default_password>: %s\n", default_password);
 
 	//释放链表资源 TODO
+	head = delete_link(head);
+	if (head == NULL){
+		printf("free ok\n");
+	}
 
 	do{
 		stop = read_line(fp, username);

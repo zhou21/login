@@ -19,10 +19,10 @@ Config *insert_node(Config *head, Config node)
     return head;
 }
 
-int delete_link(Config *head)
+Config *delete_link(Config *head)
 {
     if (head == NULL){
-        return -1;
+        return head;
     }
     Config *tmp = head;
     while(tmp == NULL){
@@ -30,10 +30,11 @@ int delete_link(Config *head)
         head = head->next;
         free(tmp);
     }
-    return 0;
+
+    return NULL;
 }
 
-int print_link(Config *head)
+void print_link(Config *head)
 {
     Config *tmp = head;
     while(tmp != NULL){
@@ -41,3 +42,4 @@ int print_link(Config *head)
         tmp = tmp->next;
     }
 }
+

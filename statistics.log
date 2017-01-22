@@ -1,7 +1,0 @@
-LoginTotal: 10
-LoginSuccess(portal): 0
-AuthFail(gw_message): 0
-LoginFail(post): 0
-get_userinfo(10.10.10.10)RecvNULL: 10
-PostLogin(cloud)RecvNULL: 0
-Authfali(10.10.10.10)RecvNULL: 0

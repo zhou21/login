@@ -2,8 +2,8 @@
 #include<string.h>
 #include <time.h>
 
-#define LOG_FILE "fail.log"
-#define LOG_STATISTICS "statistics.log"
+#define LOG_FILE "log/fail.log"
+#define LOG_STATISTICS "log/statistics.log"
 int log_error(unsigned char *error_msg)
 {
     time_t time_stamp;

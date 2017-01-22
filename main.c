@@ -28,7 +28,6 @@
 #define ARPHRD_ETHER  1 
 #define SIZE  2048
 
-
 static const unsigned char map[256] = {  
 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 253, 255,  
 255, 253, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,  
@@ -75,14 +74,15 @@ int base64_decode(const unsigned char *in, unsigned char *out)
     return z;  
 }  
 
-int login(char *username, char * password)
+/*用户登录*/
+int login(char *username, char * password, int *number, int *abnormal)
 {
-	static int success = 0;
 	//通过访问10.10.10.10获取用户信息
 	char http_r[2048] = "";
  	char *get_user_url = "http://10.10.10.10";	
 	char *userinfo = http_get(get_user_url);
 	if (userinfo == NULL){
+		abnormal[0]++;
 		return -1;
 	}
 	strcpy(http_r, userinfo);
@@ -99,6 +99,7 @@ int login(char *username, char * password)
 	sprintf(login_url, "http://pay.tianwifi.net/wifidog/login?%s", out);
 	char * token = http_post(login_url, login_user);
 	if (token == NULL){
+		abnormal[1]++;
 		return -1;
 	}
 	strcpy(http_r, token);
@@ -111,6 +112,7 @@ int login(char *username, char * password)
 	
 	char *auth_ok = strstr(json_text, "\"r\":1");
 	if (auth_ok == NULL){
+		number[2]++;
 		unsigned char error_msg[1024] = ""; 
 		sprintf(error_msg, "<username: %s><password: %s>--<%s>", username, password, http_r);
 		log_error(error_msg);
@@ -132,20 +134,22 @@ int login(char *username, char * password)
 	//printf("url=%s\n",url_auth);
 	char *portal = http_get(url_auth);
 	if (portal == NULL){
+		abnormal[2]++;
 		return -1;
 	}
 	strcpy(http_r, portal);	
 	printf("protal:%s\n",http_r);
 	if (strstr(http_r, "portal.html") != NULL){
-		success++;
+		number[0]++;
 	}else if(strstr(http_r, "gw_message.html")){
+		number[1]++;
 		unsigned char fail_msg[128] = "";
 		sprintf(fail_msg, "%s : %s", username, "auth fail");
 		log_error(fail_msg);
 	}
 	//释放资源
 	cJSON_Delete(root); 
-	return success;
+	return 0;
 }
 
 char *read_line(FILE *fp, char *username)
@@ -319,6 +323,10 @@ Config *reslove_configure(unsigned char *line, Config *head)
 Config *load_configure(unsigned char *configure_file, Config *head)
 {
      FILE * filep = open_file(configure_file);
+	 if(filep == NULL){
+		 printf("configure file is not exist\n");
+		 return NULL;
+	 }
 	 unsigned char *stop = NULL;
 	 unsigned char line[1024] = "";
 	 int i = 0;
@@ -390,6 +398,10 @@ int main(int agrc, char *agrv[])
 	load_config_cache(head, ip, mask, gw, user_path, ether, default_password);
 
 	FILE *fp = open_file(user_path);
+	if(fp == NULL){
+		 printf("error: user list file is not exist\n");
+		 return -1;
+	 }
 	unsigned char username[128] = "";
 	unsigned char ip_str[16] = "";
 	unsigned char *stop = NULL;
@@ -411,7 +423,9 @@ int main(int agrc, char *agrv[])
 	//delete log
 	delete_log_file();
 	int total = 0;
-	int success = 0;
+	int number[3] = {0};
+	int abnormal[3] = {0};
+	
 	do{
 		stop = read_line(fp, username);
 		if (stop != NULL){
@@ -420,7 +434,7 @@ int main(int agrc, char *agrv[])
 			printf("<ip_str>: %s\n", ip_str);
 			update_ip_and_eth(ether, ip_str, mask, gw, mac);
 			usleep(200);
-			success = login(username, default_password);
+			login(username, default_password, number, abnormal);
 			total++;
 		}
 		
@@ -436,7 +450,15 @@ int main(int agrc, char *agrv[])
 			mac[5] = 50;
 		}
 	}while(stop != NULL);
+	
 	statistics("LoginTotal", total);
-	statistics("LoginSuccess", success);
+
+	statistics("LoginSuccess(portal)", number[0]);
+	statistics("AuthFail(gw_message)", number[1]);
+	statistics("LoginFail(post)", number[2]);
+
+	statistics("get_userinfo(10.10.10.10)RecvNULL", abnormal[0]);
+	statistics("PostLogin(cloud)RecvNULL", abnormal[1]);
+	statistics("Authfali(10.10.10.10)RecvNULL", abnormal[2]);
 	return 0;
 }

@@ -1,6 +1,6 @@
 start_ip:172.16.0.12
 mask:255.255.0.0
 gw:172.16.0.1
-user_file:newuser.txt
+user_file:user.txt
 ether:ens33
 default_password:123456

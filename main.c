@@ -82,6 +82,9 @@ int login(char *username, char * password)
 	char http_r[2048] = "";
  	char *get_user_url = "http://10.10.10.10";	
 	char *userinfo = http_get(get_user_url);
+	if (userinfo == NULL){
+		return -1;
+	}
 	strcpy(http_r, userinfo);
 	char key[1024] = "";
 	char out[1024] = "";
@@ -95,6 +98,9 @@ int login(char *username, char * password)
 	sprintf(login_user,"username=%s&password=%s",username, password);
 	sprintf(login_url, "http://pay.tianwifi.net/wifidog/login?%s", out);
 	char * token = http_post(login_url, login_user);
+	if (token == NULL){
+		return -1;
+	}
 	strcpy(http_r, token);
 
 	//获取token值
@@ -125,10 +131,17 @@ int login(char *username, char * password)
 	sprintf(url_auth, "http://10.10.10.10/wifidog/auth?%s&token=%s&username=%s",out,tmp2->valuestring, username);
 	//printf("url=%s\n",url_auth);
 	char *portal = http_get(url_auth);
+	if (portal == NULL){
+		return -1;
+	}
 	strcpy(http_r, portal);	
 	printf("protal:%s\n",http_r);
-	if (strstr(http_r, "portal") != NULL){
+	if (strstr(http_r, "portal.html") != NULL){
 		success++;
+	}else if(strstr(http_r, "gw_message.html")){
+		unsigned char fail_msg[128] = "";
+		sprintf(fail_msg, "%s : %s", username, "auth fail");
+		log_error(fail_msg);
 	}
 	//释放资源
 	cJSON_Delete(root); 

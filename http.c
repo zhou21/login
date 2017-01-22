@@ -205,7 +205,7 @@ char * http_get(const char *url)
     int len=0;  
   
     if(!url){  
-        printf("      failed!\n");  
+        printf("failed!\n");  
         return NULL;  
     }  
   
@@ -231,9 +231,9 @@ char * http_get(const char *url)
   
     if(http_tcpclient_recv(socket_fd,lpbuf) <= 0){  
         printf("http_tcpclient_recv failed\n");  
-        return NULL;  
+        return NULL;
     }  
-    http_tcpclient_close(socket_fd);  
+    http_tcpclient_close(socket_fd); 
   
-    return http_parse_result(lpbuf);  
+    return http_parse_result(lpbuf);
 } 

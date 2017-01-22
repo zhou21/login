@@ -1,8 +1,9 @@
 #include<stdio.h>
+#include<string.h>
 #include <time.h>
 
-#define LOG_FILE "tmp_fail"
-
+#define LOG_FILE "fail.log"
+#define LOG_STATISTICS "statistics.log"
 int log_error(unsigned char *error_msg)
 {
     time_t time_stamp;
@@ -18,8 +19,29 @@ int log_error(unsigned char *error_msg)
     return 0;
 }
 
+static int log_add(unsigned char *file, unsigned char *content)
+{
+    FILE *fp = NULL;
+    if ((fp = fopen(file, "a+")) == NULL){
+        perror("open file");
+        return -1;
+    }
+    fwrite(content, strlen(content), 1, fp);
+    fflush(fp);
+    fclose(fp);
+}
+
+int statistics(unsigned char *type, int number)
+{
+    unsigned char content[1024] = "";
+    sprintf(content, "%s: %d\n", type, number);
+    int ok = log_add(LOG_STATISTICS, content);
+    return ok;
+}
+
 int delete_log_file()
 {
 	int ok = remove(LOG_FILE);
+    ok = remove(LOG_STATISTICS);
 	return ok;
 }

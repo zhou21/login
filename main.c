@@ -28,6 +28,7 @@
 #define ARPHRD_ETHER  1 
 #define SIZE  2048
 
+
 static const unsigned char map[256] = {  
 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 253, 255,  
 255, 253, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,  
@@ -76,6 +77,7 @@ int base64_decode(const unsigned char *in, unsigned char *out)
 
 int login(char *username, char * password)
 {
+	static int success = 0;
 	//通过访问10.10.10.10获取用户信息
 	char http_r[2048] = "";
  	char *get_user_url = "http://10.10.10.10";	
@@ -122,13 +124,15 @@ int login(char *username, char * password)
 	char url_auth[1024] = ""; 
 	sprintf(url_auth, "http://10.10.10.10/wifidog/auth?%s&token=%s&username=%s",out,tmp2->valuestring, username);
 	//printf("url=%s\n",url_auth);
-	char *protal = http_get(url_auth);
-	strcpy(http_r, protal);	
+	char *portal = http_get(url_auth);
+	strcpy(http_r, portal);	
 	printf("protal:%s\n",http_r);
-	
+	if (strstr(http_r, "portal") != NULL){
+		success++;
+	}
 	//释放资源
 	cJSON_Delete(root); 
- 
+	return success;
 }
 
 char *read_line(FILE *fp, char *username)
@@ -393,7 +397,8 @@ int main(int agrc, char *agrv[])
 	
 	//delete log
 	delete_log_file();
-
+	int total = 0;
+	int success = 0;
 	do{
 		stop = read_line(fp, username);
 		if (stop != NULL){
@@ -402,7 +407,8 @@ int main(int agrc, char *agrv[])
 			printf("<ip_str>: %s\n", ip_str);
 			update_ip_and_eth(ether, ip_str, mask, gw, mac);
 			usleep(200);
-			login(username, default_password);
+			success = login(username, default_password);
+			total++;
 		}
 		
 		ip[3]++;
@@ -417,6 +423,7 @@ int main(int agrc, char *agrv[])
 			mac[5] = 50;
 		}
 	}while(stop != NULL);
-
+	statistics("LoginTotal", total);
+	statistics("LoginSuccess", success);
 	return 0;
 }

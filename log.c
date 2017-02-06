@@ -1,7 +1,10 @@
-#include<stdio.h>
-#include<string.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
+#define LOG_DIR "./log"
 #define LOG_FILE "log/fail.log"
 #define LOG_STATISTICS "log/statistics.log"
 int log_error(unsigned char *error_msg)
@@ -39,9 +42,14 @@ int statistics(unsigned char *type, int number)
     return ok;
 }
 
-int delete_log_file()
+int init_log()
 {
+    int log_ok = mkdir(LOG_DIR, 0766);
+    if (log_ok < 0){
+        perror("log dir");
+    }
 	int ok = remove(LOG_FILE);
     ok = remove(LOG_STATISTICS);
 	return ok;
 }
+

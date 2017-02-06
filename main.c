@@ -74,12 +74,26 @@ int base64_decode(const unsigned char *in, unsigned char *out)
     return z;  
 }  
 
-/*用户登录*/
-int login(char *username, char * password, int *number, int *abnormal)
+int make_node_in_kernel()
 {
+	unsigned char url[] = "http://www.sohu.com";
+	char *res = http_get(url);
+	if(res == NULL){
+		return -1;
+	}
+	// TODO strstr()
+	return 0;
+}
+
+/*用户登录*/
+int login(char *username, char *password, int *number, int *abnormal)
+{
+	//在获取用户信息前通过访问一下sohu.com以在内核中建立一个对应节点
+	int node = make_node_in_kernel();
+
 	//通过访问10.10.10.10获取用户信息
 	char http_r[2048] = "";
- 	char *get_user_url = "http://10.10.10.10";	
+ 	char *get_user_url = "http://10.10.10.10";
 	char *userinfo = http_get(get_user_url);
 	if (userinfo == NULL){
 		abnormal[0]++;
@@ -93,17 +107,22 @@ int login(char *username, char * password, int *number, int *abnormal)
 	
 	//云端登录
 	//gw_address=10.10.10.10&gw_port=80&gw_id=1f0770fd4acb3ece&ip=172.16.0.201&mac=00:0c:29:39:08:11&uid=216&magic=434&rid=0&_t=1484722226
-	char login_url[1024] = ""; 
+	char login_url[1024] = "";
 	char login_user[1024] = "";
+	
+	//pos方式登录
 	/*
 	sprintf(login_user,"username=%s&password=%s",username, password);
 	sprintf(login_url, "http://pay.tianwifi.net/wifidog/login?%s", out);
 	printf("%s\n",login_url);
 	char * token = http_post(login_url, login_user);
 	*/
+	
+	//get方式登录
 	sprintf(login_user,"username=%s&password=%s",username, password);
 	sprintf(login_url, "http://pay.tianwifi.net/wifidog/login?%s&%s", out, login_user);
 	char * token = http_get(login_url);
+	
 	if (token == NULL){
 		abnormal[1]++;
 		return -1;
@@ -119,7 +138,7 @@ int login(char *username, char * password, int *number, int *abnormal)
 	char *auth_ok = strstr(json_text, "\"r\":1");
 	if (auth_ok == NULL){
 		number[2]++;
-		unsigned char error_msg[1024] = ""; 
+		unsigned char error_msg[1024] = "";
 		sprintf(error_msg, "<username: %s><password: %s>--<%s>", username, password, http_r);
 		log_error(error_msg);
 		printf("username auth fail to skip \n");
@@ -127,7 +146,7 @@ int login(char *username, char * password, int *number, int *abnormal)
 	}
 
 	cJSON * root = cJSON_Parse(json_text);
-	cJSON* tmp1=cJSON_GetObjectItem(root,"d");	
+	cJSON* tmp1=cJSON_GetObjectItem(root,"d");
 	cJSON* tmp2=cJSON_GetObjectItem(tmp1,"token");
 	if( tmp2 != NULL){
 		if (tmp2->valuestring != NULL)
@@ -307,7 +326,6 @@ int update_ip_and_eth(char *ether, char * ip, char * mask, char *gw, char * mac)
 	if (gw_ok == 0){
 		printf("set gw is ok\n");
 	}
-
 }
 
 
@@ -347,8 +365,8 @@ Config *load_configure(unsigned char *configure_file, Config *head)
 
 int load_config_cache(Config *head, unsigned char *start_ip, unsigned char *mask, unsigned char *gw, char *user_path, unsigned char *ether, unsigned char *password)
 {
-	struct ifreq temp;  
-    struct sockaddr* addr;  
+	//struct ifreq temp;
+    //struct sockaddr* addr;  
 
 	Config *tmp = head;
 	while(tmp != NULL){
@@ -378,15 +396,7 @@ int main(int agrc, char *agrv[])
 		printf("sorry you have not input config file\n");
 		return -1;
 	}
-/*
-	printf("login begin\n");
-	unsigned char *ether = agrv[1]; 
-	unsigned char *user_path = agrv[2];
-	unsigned char *defualt_password = agrv[3];
-	if (agrv[3] == NULL) {
-		defualt_password = "123456";
-	}
-*/
+
 	unsigned char mac[6] = {2,12,41,28,178,50};
 	unsigned char ip[4] = {172,16,0,12};
 	unsigned char mask[32] = "255.255.0.0";
@@ -426,8 +436,9 @@ int main(int agrc, char *agrv[])
 		printf("free ok\n");
 	}
 	
-	//delete log
-	delete_log_file();
+	//init log
+	init_log();
+	
 	int total = 0;
 	int number[3] = {0};
 	int abnormal[3] = {0};

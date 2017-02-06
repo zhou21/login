@@ -139,7 +139,7 @@ static char *http_parse_result(char*lpbuf)
     */
     bzero(http_response, SIZE_HTTP_RESPONSE);
     response = http_response;  
-    strcpy(response,ptmp+4);  
+    strncpy(response,ptmp+4, SIZE_HTTP_RESPONSE); //avoid segmentation fault  
     
     return response;  
 }  

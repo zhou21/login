@@ -95,9 +95,15 @@ int login(char *username, char * password, int *number, int *abnormal)
 	//gw_address=10.10.10.10&gw_port=80&gw_id=1f0770fd4acb3ece&ip=172.16.0.201&mac=00:0c:29:39:08:11&uid=216&magic=434&rid=0&_t=1484722226
 	char login_url[1024] = ""; 
 	char login_user[1024] = "";
+	/*
 	sprintf(login_user,"username=%s&password=%s",username, password);
 	sprintf(login_url, "http://pay.tianwifi.net/wifidog/login?%s", out);
+	printf("%s\n",login_url);
 	char * token = http_post(login_url, login_user);
+	*/
+	sprintf(login_user,"username=%s&password=%s",username, password);
+	sprintf(login_url, "http://pay.tianwifi.net/wifidog/login?%s&%s", out, login_user);
+	char * token = http_get(login_url);
 	if (token == NULL){
 		abnormal[1]++;
 		return -1;

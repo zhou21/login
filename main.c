@@ -83,7 +83,7 @@ int make_node_in_kernel()
 		return -1;
 	}
 
-	return 0;
+    return 0;
 }
 
 /*用户登录*/
@@ -92,9 +92,10 @@ int login(char *username, char *password, int *number, int *abnormal)
 	//在获取用户信息前通过访问一下sohu.com以在内核中建立一个对应节点
 	int node = make_node_in_kernel();
 	if(node < 0){
-		unsigned char error_msg[128] = "";
+		unsigned char error_msg[1024] = "";
 		sprintf(error_msg, "make node in kernel(NULL): %s\n", username);
 		log_error(error_msg);
+		abnormal[3]++;
 		return -1;
 	}
 
@@ -111,25 +112,24 @@ int login(char *username, char *password, int *number, int *abnormal)
 	char out[1024] = "";
 	sscanf(http_r, "%*[^?]?key=%[^\n]", key);
 	base64_decode(key, out);
-	
+	unsigned char tmp[1024] = "";
+	strcpy(tmp, key);
 	//云端登录
 	//gw_address=10.10.10.10&gw_port=80&gw_id=1f0770fd4acb3ece&ip=172.16.0.201&mac=00:0c:29:39:08:11&uid=216&magic=434&rid=0&_t=1484722226
 	char login_url[1024] = "";
 	char login_user[1024] = "";
-	
+#ifdef _POST_
 	//pos方式登录
-	/*
 	sprintf(login_user,"username=%s&password=%s",username, password);
 	sprintf(login_url, "http://pay.tianwifi.net/wifidog/login?%s", out);
 	printf("%s\n",login_url);
-	char * token = http_post(login_url, login_user);
-	*/
-	
+	char *token = http_post(login_url, login_user);
+#else 
 	//get方式登录
 	sprintf(login_user,"username=%s&password=%s",username, password);
 	sprintf(login_url, "http://pay.tianwifi.net/wifidog/login?%s&%s", out, login_user);
 	char * token = http_get(login_url);
-	
+#endif
 	if (token == NULL){
 		abnormal[1]++;
 		return -1;
@@ -175,8 +175,12 @@ int login(char *username, char *password, int *number, int *abnormal)
 		number[0]++;
 	}else if(strstr(http_r, "gw_message.html")){
 		number[1]++;
-		unsigned char fail_msg[128] = "";
+		unsigned char fail_msg[1024] = "";
 		sprintf(fail_msg, "%s : %s", username, "auth fail");
+		log_error(fail_msg);
+
+		bzero(fail_msg, 1024);
+		sprintf(fail_msg, "<auth fail detail> key:%s, username:%s\n", tmp, username);
 		log_error(fail_msg);
 	}
 	//释放资源
@@ -448,7 +452,7 @@ int main(int agrc, char *agrv[])
 	
 	int total = 0;
 	int number[3] = {0};
-	int abnormal[3] = {0};
+	int abnormal[4] = {0};
 	
 	do{
 		stop = read_line(fp, username);
@@ -484,5 +488,6 @@ int main(int agrc, char *agrv[])
 	statistics("get_userinfo(10.10.10.10)RecvNULL", abnormal[0]);
 	statistics("PostLogin(cloud)RecvNULL", abnormal[1]);
 	statistics("Authfali(10.10.10.10)RecvNULL", abnormal[2]);
+	statistics("make node in kernel RecvNULL", abnormal[3]);
 	return 0;
 }

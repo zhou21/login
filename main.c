@@ -76,12 +76,13 @@ int base64_decode(const unsigned char *in, unsigned char *out)
 
 int make_node_in_kernel()
 {
-	unsigned char url[] = "http://www.sohu.com";
+	//unsigned char url[] = "http://www.sohu.com";
+	unsigned char url[] = "http://172.16.0.1";
 	char *res = http_get(url);
 	if(res == NULL){
 		return -1;
 	}
-	// TODO strstr()
+
 	return 0;
 }
 
@@ -90,6 +91,12 @@ int login(char *username, char *password, int *number, int *abnormal)
 {
 	//在获取用户信息前通过访问一下sohu.com以在内核中建立一个对应节点
 	int node = make_node_in_kernel();
+	if(node < 0){
+		unsigned char error_msg[128] = "";
+		sprintf(error_msg, "make node in kernel(NULL): %s\n", username);
+		log_error(error_msg);
+		return -1;
+	}
 
 	//通过访问10.10.10.10获取用户信息
 	char http_r[2048] = "";
@@ -154,7 +161,7 @@ int login(char *username, char *password, int *number, int *abnormal)
 	}
 
 	//token 认证
-	char url_auth[1024] = ""; 
+	char url_auth[1024] = "";
 	sprintf(url_auth, "http://10.10.10.10/wifidog/auth?%s&token=%s&username=%s",out,tmp2->valuestring, username);
 	//printf("url=%s\n",url_auth);
 	char *portal = http_get(url_auth);
